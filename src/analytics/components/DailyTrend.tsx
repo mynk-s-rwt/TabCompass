@@ -3,6 +3,7 @@ import { formatDuration } from '../../utils/analytics/aggregator';
 
 interface DailyTrendProps {
   data: DailyStats[];
+  maxDays?: number; // Limit display to last N days
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -14,8 +15,11 @@ const CATEGORY_COLORS: Record<string, string> = {
   Other: '#6B7280',
 };
 
-export function DailyTrend({ data }: DailyTrendProps) {
-  if (data.length === 0) {
+export function DailyTrend({ data, maxDays = 7 }: DailyTrendProps) {
+  // Only show the last N days
+  const displayData = data.slice(-maxDays);
+
+  if (displayData.length === 0) {
     return (
       <div className="text-center text-gray-500 py-8">
         No daily data available.
@@ -23,19 +27,19 @@ export function DailyTrend({ data }: DailyTrendProps) {
     );
   }
 
-  const maxTime = Math.max(...data.map(d => d.totalTime), 1);
+  const maxTime = Math.max(...displayData.map(d => d.totalTime), 1);
 
-  // Get all unique categories across all days
+  // Get all unique categories across displayed days
   const allCategories = new Set<string>();
-  data.forEach(day => {
+  displayData.forEach(day => {
     Object.keys(day.categories).forEach(cat => allCategories.add(cat));
   });
 
   return (
     <div className="space-y-4">
       {/* Bar Chart */}
-      <div className="flex items-end justify-between gap-1 h-32">
-        {data.map(day => {
+      <div className="flex items-end justify-between gap-2 h-32">
+        {displayData.map(day => {
           const height = (day.totalTime / maxTime) * 100;
           const date = new Date(day.date);
           const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
@@ -83,10 +87,10 @@ export function DailyTrend({ data }: DailyTrendProps) {
       {/* Summary */}
       <div className="flex justify-between text-sm text-gray-500 pt-2 border-t">
         <span>
-          Avg: {formatDuration(data.reduce((sum, d) => sum + d.totalTime, 0) / data.length)}
+          Avg: {formatDuration(displayData.reduce((sum, d) => sum + d.totalTime, 0) / displayData.length)}
         </span>
         <span>
-          Total: {formatDuration(data.reduce((sum, d) => sum + d.totalTime, 0))}
+          Total: {formatDuration(displayData.reduce((sum, d) => sum + d.totalTime, 0))}
         </span>
       </div>
     </div>
