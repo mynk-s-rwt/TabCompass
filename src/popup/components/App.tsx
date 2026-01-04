@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
-import { Compass, Settings } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+import { Compass, Settings, Sparkles, Zap } from 'lucide-react';
 import { SearchInput } from './SearchInput';
 import { SearchResults } from './SearchResults';
 import { search } from '../../utils/search';
+import { getSettings, getApiKey } from '../../utils/storage/settings';
 import type { SearchResult } from '../../types';
 
 export function App() {
@@ -10,6 +11,17 @@ export function App() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchMode, setSearchMode] = useState<'ai' | 'basic'>('basic');
+
+  // Check search mode on mount
+  useEffect(() => {
+    async function checkMode() {
+      const settings = await getSettings();
+      const apiKey = await getApiKey();
+      setSearchMode(settings.mode === 'ai' && apiKey ? 'ai' : 'basic');
+    }
+    checkMode();
+  }, []);
 
   const handleSearch = useCallback(async (searchQuery: string) => {
     setQuery(searchQuery);
@@ -45,6 +57,27 @@ export function App() {
         <div className="flex items-center gap-2">
           <Compass className="w-6 h-6 text-blue-500" />
           <h1 className="font-semibold text-gray-900">TabCompass</h1>
+          {/* Search Mode Indicator */}
+          <span
+            className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+              searchMode === 'ai'
+                ? 'bg-purple-100 text-purple-700'
+                : 'bg-gray-100 text-gray-600'
+            }`}
+            title={searchMode === 'ai' ? 'AI-powered semantic search' : 'Basic keyword search'}
+          >
+            {searchMode === 'ai' ? (
+              <>
+                <Sparkles className="w-3 h-3" />
+                AI
+              </>
+            ) : (
+              <>
+                <Zap className="w-3 h-3" />
+                Basic
+              </>
+            )}
+          </span>
         </div>
 
         <button
@@ -81,7 +114,9 @@ export function App() {
       {/* Footer */}
       <div className="px-4 py-2 border-t border-gray-100 text-center">
         <p className="text-xs text-gray-400">
-          Press <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-600">Ctrl+Shift+F</kbd> to open
+          Press <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-600">
+            {navigator.platform.includes('Mac') ? 'Cmd' : 'Ctrl'}+Shift+K
+          </kbd> to open
         </p>
       </div>
     </div>
