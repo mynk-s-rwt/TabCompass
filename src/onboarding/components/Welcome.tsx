@@ -9,8 +9,8 @@ export function Welcome({ onNext }: WelcomeProps) {
       <div className="flex justify-center mb-8">
         <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#007AFF] to-[#AF52DE] flex items-center justify-center shadow-2xl shadow-[#007AFF]/30">
           <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+            <circle cx="12" cy="12" r="10" />
+            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
           </svg>
         </div>
       </div>
@@ -31,15 +31,15 @@ export function Welcome({ onNext }: WelcomeProps) {
           <div className="flex items-center gap-4 p-3 rounded-xl bg-[#3A3A3C]/50">
             <div className="w-8 h-8 rounded-lg bg-[#34C759]/15 flex items-center justify-center flex-shrink-0">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34C759" strokeWidth="2.5">
-                <polyline points="20 6 9 17 4 12"/>
+                <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
-            <span className="text-[14px]">Find tabs by content, not just title</span>
+            <span className="text-[14px]">Find tabs by context, not just title</span>
           </div>
           <div className="flex items-center gap-4 p-3 rounded-xl bg-[#3A3A3C]/50">
             <div className="w-8 h-8 rounded-lg bg-[#34C759]/15 flex items-center justify-center flex-shrink-0">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34C759" strokeWidth="2.5">
-                <polyline points="20 6 9 17 4 12"/>
+                <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
             <span className="text-[14px]">Search tabs from weeks or months ago</span>
@@ -47,7 +47,7 @@ export function Welcome({ onNext }: WelcomeProps) {
           <div className="flex items-center gap-4 p-3 rounded-xl bg-[#3A3A3C]/50">
             <div className="w-8 h-8 rounded-lg bg-[#34C759]/15 flex items-center justify-center flex-shrink-0">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34C759" strokeWidth="2.5">
-                <polyline points="20 6 9 17 4 12"/>
+                <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
             <span className="text-[14px]">Track your browsing productivity</span>
@@ -55,7 +55,7 @@ export function Welcome({ onNext }: WelcomeProps) {
           <div className="flex items-center gap-4 p-3 rounded-xl bg-[#3A3A3C]/50">
             <div className="w-8 h-8 rounded-lg bg-[#34C759]/15 flex items-center justify-center flex-shrink-0">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34C759" strokeWidth="2.5">
-                <polyline points="20 6 9 17 4 12"/>
+                <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
             <span className="text-[14px]">100% private - all data stays local</span>
