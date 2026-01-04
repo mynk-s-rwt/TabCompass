@@ -11,14 +11,18 @@ export function App() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchMode, setSearchMode] = useState<'ai' | 'basic'>('basic');
+  const [searchMode, setSearchMode] = useState<'ai' | 'basic' | 'loading'>('loading');
 
   // Check search mode on mount
   useEffect(() => {
     async function checkMode() {
-      const settings = await getSettings();
-      const apiKey = await getApiKey();
-      setSearchMode(settings.mode === 'ai' && apiKey ? 'ai' : 'basic');
+      try {
+        const settings = await getSettings();
+        const apiKey = await getApiKey();
+        setSearchMode(settings.mode === 'ai' && apiKey ? 'ai' : 'basic');
+      } catch (err) {
+        setSearchMode('basic');
+      }
     }
     checkMode();
   }, []);
@@ -58,26 +62,28 @@ export function App() {
           <Compass className="w-6 h-6 text-blue-500" />
           <h1 className="font-semibold text-gray-900">TabCompass</h1>
           {/* Search Mode Indicator */}
-          <span
-            className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-              searchMode === 'ai'
-                ? 'bg-purple-100 text-purple-700'
-                : 'bg-gray-100 text-gray-600'
-            }`}
-            title={searchMode === 'ai' ? 'AI-powered semantic search' : 'Basic keyword search'}
-          >
-            {searchMode === 'ai' ? (
-              <>
-                <Sparkles className="w-3 h-3" />
-                AI
-              </>
-            ) : (
-              <>
-                <Zap className="w-3 h-3" />
-                Basic
-              </>
-            )}
-          </span>
+          {searchMode !== 'loading' && (
+            <span
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                searchMode === 'ai'
+                  ? 'bg-purple-100 text-purple-700'
+                  : 'bg-gray-100 text-gray-600'
+              }`}
+              title={searchMode === 'ai' ? 'AI-powered semantic search' : 'Basic keyword search'}
+            >
+              {searchMode === 'ai' ? (
+                <>
+                  <Sparkles className="w-3 h-3" />
+                  AI
+                </>
+              ) : (
+                <>
+                  <Zap className="w-3 h-3" />
+                  Basic
+                </>
+              )}
+            </span>
+          )}
         </div>
 
         <button
