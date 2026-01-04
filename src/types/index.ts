@@ -1,4 +1,5 @@
 // TabCompass Type Definitions
-// Placeholder - types will be added in Phase 2
-
-export {};
+export * from './tab';
+export * from './settings';
+export * from './analytics';
+export * from './api';
