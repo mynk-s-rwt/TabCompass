@@ -16,10 +16,14 @@ export async function saveSettings(settings: Partial<UserSettings>): Promise<voi
   const updated = { ...current, ...settings };
   await chrome.storage.local.set({ [SETTINGS_KEY]: updated });
 
-  // Update mode cache when settings change
+  // Update mode cache when settings change (only works in popup/options, not service worker)
   if (settings.mode !== undefined) {
-    const apiKey = await getApiKey();
-    updateModeCache(updated.mode === 'ai' && apiKey ? 'ai' : 'basic');
+    try {
+      const apiKey = await getApiKey();
+      updateModeCache(updated.mode === 'ai' && apiKey ? 'ai' : 'basic');
+    } catch {
+      // Ignore errors in service worker context
+    }
   }
 }
 
@@ -32,8 +36,13 @@ export async function getApiKey(): Promise<string | null> {
 export async function saveApiKey(apiKey: string): Promise<void> {
   await chrome.storage.local.set({ [API_KEY]: apiKey });
   // Update mode cache - if we have an API key and mode is 'ai', cache it
-  const settings = await getSettings();
-  updateModeCache(settings.mode === 'ai' && apiKey ? 'ai' : 'basic');
+  // (only works in popup/options, not service worker)
+  try {
+    const settings = await getSettings();
+    updateModeCache(settings.mode === 'ai' && apiKey ? 'ai' : 'basic');
+  } catch {
+    // Ignore errors in service worker context
+  }
 }
 
 export async function clearApiKey(): Promise<void> {
@@ -53,15 +62,13 @@ export function validateApiKey(apiKey: string): boolean {
 // Synchronous mode cache functions for instant UI display
 // Note: localStorage is NOT available in service workers
 export function getCachedMode(): 'ai' | 'basic' | null {
-  // Check if we're in a context with localStorage (popup, options page)
-  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-    return null;
-  }
-
   try {
-    const cached = localStorage.getItem(MODE_CACHE_KEY);
-    if (cached === 'ai' || cached === 'basic') {
-      return cached;
+    // Must check window exists before accessing localStorage
+    if (typeof globalThis !== 'undefined' && 'localStorage' in globalThis) {
+      const cached = globalThis.localStorage.getItem(MODE_CACHE_KEY);
+      if (cached === 'ai' || cached === 'basic') {
+        return cached;
+      }
     }
     return null;
   } catch {
@@ -70,14 +77,12 @@ export function getCachedMode(): 'ai' | 'basic' | null {
 }
 
 export function updateModeCache(mode: 'ai' | 'basic'): void {
-  // Check if we're in a context with localStorage (popup, options page)
-  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-    return;
-  }
-
   try {
-    localStorage.setItem(MODE_CACHE_KEY, mode);
+    // Must check window exists before accessing localStorage
+    if (typeof globalThis !== 'undefined' && 'localStorage' in globalThis) {
+      globalThis.localStorage.setItem(MODE_CACHE_KEY, mode);
+    }
   } catch {
-    // Silently fail
+    // Silently fail in service worker
   }
 }
