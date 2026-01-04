@@ -37,7 +37,8 @@ export async function semanticSearch(
   console.log('[Search] Tabs with embeddings:', tabsWithEmbeddings.length);
 
   // Minimum similarity threshold - filter out irrelevant results
-  const MIN_SIMILARITY_THRESHOLD = 0.65;
+  // Note: 0.50 is reasonable for semantic search with embeddings
+  const MIN_SIMILARITY_THRESHOLD = 0.50;
 
   // Calculate similarity for each tab
   const results: SearchResult[] = tabsWithEmbeddings.map(tab => {

@@ -59,11 +59,26 @@ export async function indexTab(tabId: number, url: string): Promise<void> {
       const results = await chrome.scripting.executeScript({
         target: { tabId },
         func: () => {
-          // Inline extraction function
+          // Inline extraction function - prioritize title and meta descriptions
+          const title = document.title || '';
+          const metaDesc = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
+          const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content') || '';
+          const ogDesc = document.querySelector('meta[property="og:description"]')?.getAttribute('content') || '';
+
+          // Priority content
+          const priorityContent = [title, ogTitle, metaDesc, ogDesc]
+            .filter(Boolean)
+            .filter((v, i, a) => a.indexOf(v) === i)
+            .join(' | ');
+
+          // Get body content with navigation removed
           const clone = document.body.cloneNode(true) as HTMLElement;
-          clone.querySelectorAll('script, style, nav, footer, header, aside, .ad, .advertisement').forEach(el => el.remove());
-          const content = (clone.innerText || clone.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 5000);
-          const title = document.title;
+          clone.querySelectorAll('script, style, noscript, iframe, nav, footer, header, aside, .ad, .advertisement, .sidebar, .menu, [role="banner"], [role="navigation"], [role="complementary"], #guide, #masthead, #secondary, #related').forEach(el => el.remove());
+
+          const mainContent = (clone.querySelector('main, article, [role="main"], #content, .content, #primary') || clone) as HTMLElement;
+          const bodyText = (mainContent.innerText || mainContent.textContent || '').replace(/\s+/g, ' ').trim();
+
+          const content = (priorityContent + ' ' + bodyText).slice(0, 5000);
           return { content, metadata: { title } };
         },
       });
