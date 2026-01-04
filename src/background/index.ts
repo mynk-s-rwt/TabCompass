@@ -16,28 +16,10 @@ chrome.runtime.onInstalled.addListener(async () => {
   // Open onboarding page
   chrome.tabs.create({ url: chrome.runtime.getURL('src/onboarding/index.html') });
 
-  // Index all existing tabs (content script should auto-inject via manifest)
-  // Give content scripts time to load on existing tabs
-  setTimeout(async () => {
-    console.log('[Background] Indexing existing tabs...');
-    const existingTabs = await chrome.tabs.query({});
-    let indexed = 0;
-    let skipped = 0;
-
-    for (const tab of existingTabs) {
-      if (tab.id && tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
-        try {
-          await indexTab(tab.id, tab.url);
-          indexed++;
-        } catch (error) {
-          // Content script not loaded - user needs to refresh this tab
-          console.log('[Background] Tab needs refresh to index:', tab.url?.substring(0, 50));
-          skipped++;
-        }
-      }
-    }
-    console.log(`[Background] Finished: ${indexed} indexed, ${skipped} need refresh`);
-  }, 1000);
+  // Note: We don't index existing tabs on install because the user
+  // hasn't completed onboarding yet (no API key, mode is 'basic').
+  // Tabs will be indexed naturally when the user browses/refreshes them.
+  console.log('[Background] Onboarding started - tabs will be indexed after setup');
 });
 
 // Listen for tab updates
