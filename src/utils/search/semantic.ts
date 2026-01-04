@@ -16,7 +16,8 @@ export async function semanticSearch(
   // Generate query embedding
   const embeddingResult = await generateEmbedding(query);
   if (!embeddingResult.success || !embeddingResult.data) {
-    throw new Error('Failed to generate query embedding');
+    console.error('Embedding generation failed:', embeddingResult.error);
+    throw new Error(embeddingResult.error || 'Failed to generate query embedding');
   }
 
   const queryEmbedding = embeddingResult.data;

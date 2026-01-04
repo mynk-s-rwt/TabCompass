@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { ApiResponse } from '../../types';
+import { getApiKey } from '../storage/settings';
 
 let genAI: GoogleGenerativeAI | null = null;
 
@@ -12,15 +13,16 @@ export async function generateEmbedding(
   apiKey?: string
 ): Promise<ApiResponse<number[]>> {
   try {
-    if (!genAI && !apiKey) {
-      return {
-        success: false,
-        error: 'API key not configured',
-      };
-    }
-
-    if (apiKey && !genAI) {
-      initializeGemini(apiKey);
+    // If genAI not initialized, try to get API key from storage
+    if (!genAI) {
+      const storedKey = apiKey || await getApiKey();
+      if (!storedKey) {
+        return {
+          success: false,
+          error: 'API key not configured. Please add your Gemini API key in settings.',
+        };
+      }
+      initializeGemini(storedKey);
     }
 
     const model = genAI!.getGenerativeModel({ model: 'text-embedding-004' });
