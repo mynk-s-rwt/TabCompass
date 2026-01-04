@@ -1,7 +1,77 @@
 import { indexTab } from './indexer';
 import { startTracking, stopTracking } from './analytics';
 import { initializeGemini } from '../utils/api/gemini';
-import { getApiKey } from '../utils/storage/settings';
+import { getApiKey, getSettings } from '../utils/storage/settings';
+
+// Helper to index all existing tabs with delays
+async function indexExistingTabs(): Promise<void> {
+  console.log('[Background] Starting to index existing tabs...');
+
+  const tabs = await chrome.tabs.query({});
+  const validTabs = tabs.filter(tab =>
+    tab.id &&
+    tab.url &&
+    !tab.url.startsWith('chrome://') &&
+    !tab.url.startsWith('chrome-extension://')
+  );
+
+  console.log(`[Background] Found ${validTabs.length} tabs to index`);
+
+  // Index tabs with 500ms delay between each to avoid rate limiting
+  for (let i = 0; i < validTabs.length; i++) {
+    const tab = validTabs[i];
+    if (tab.id && tab.url) {
+      console.log(`[Background] Indexing tab ${i + 1}/${validTabs.length}: ${tab.url.substring(0, 50)}`);
+      await indexTab(tab.id, tab.url);
+
+      // Delay between tabs (except for the last one)
+      if (i < validTabs.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+  }
+
+  console.log('[Background] Finished indexing existing tabs');
+}
+
+// Listen for storage changes (API key being set after onboarding)
+chrome.storage.onChanged.addListener(async (changes, areaName) => {
+  if (areaName !== 'local') return;
+
+  // Check if API key was just set (changed from empty/null to a value)
+  if (changes.tabcompass_api_key) {
+    const oldValue = changes.tabcompass_api_key.oldValue as string | undefined;
+    const newValue = changes.tabcompass_api_key.newValue as string | undefined;
+
+    // Only trigger if API key was newly set (not updated)
+    if (!oldValue && newValue) {
+      console.log('[Background] API key newly set, initializing Gemini...');
+      initializeGemini(newValue);
+
+      // Check if mode is 'ai' before indexing
+      const settings = await getSettings();
+      if (settings.mode === 'ai') {
+        console.log('[Background] AI mode enabled, indexing existing tabs...');
+        // Small delay to ensure settings are fully saved
+        setTimeout(() => indexExistingTabs(), 1000);
+      }
+    }
+  }
+
+  // Also check if mode changed to 'ai' when API key already exists
+  if (changes.tabcompass_settings) {
+    const oldSettings = changes.tabcompass_settings.oldValue as { mode?: string } | undefined;
+    const newSettings = changes.tabcompass_settings.newValue as { mode?: string } | undefined;
+
+    if (oldSettings?.mode !== 'ai' && newSettings?.mode === 'ai') {
+      const apiKey = await getApiKey();
+      if (apiKey) {
+        console.log('[Background] Mode changed to AI with existing API key, indexing...');
+        setTimeout(() => indexExistingTabs(), 1000);
+      }
+    }
+  }
+});
 
 // Initialize on install
 chrome.runtime.onInstalled.addListener(async () => {
