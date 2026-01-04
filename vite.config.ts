@@ -15,6 +15,7 @@ export default defineConfig({
         popup: 'src/popup/index.html',
         options: 'src/options/index.html',
         onboarding: 'src/onboarding/index.html',
+        analytics: 'src/analytics/index.html',
       },
     },
   },
