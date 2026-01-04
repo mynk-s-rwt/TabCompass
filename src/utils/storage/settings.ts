@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS } from '../../types/settings';
 
 const SETTINGS_KEY = 'tabcompass_settings';
 const API_KEY = 'tabcompass_api_key';
+const MODE_CACHE_KEY = 'tabcompass_mode_cache'; // localStorage key for instant access
 
 export async function getSettings(): Promise<UserSettings> {
   const result = await chrome.storage.local.get([SETTINGS_KEY]);
@@ -14,6 +15,12 @@ export async function saveSettings(settings: Partial<UserSettings>): Promise<voi
   const current = await getSettings();
   const updated = { ...current, ...settings };
   await chrome.storage.local.set({ [SETTINGS_KEY]: updated });
+
+  // Update mode cache when settings change
+  if (settings.mode !== undefined) {
+    const apiKey = await getApiKey();
+    updateModeCache(updated.mode === 'ai' && apiKey ? 'ai' : 'basic');
+  }
 }
 
 export async function getApiKey(): Promise<string | null> {
@@ -24,6 +31,9 @@ export async function getApiKey(): Promise<string | null> {
 
 export async function saveApiKey(apiKey: string): Promise<void> {
   await chrome.storage.local.set({ [API_KEY]: apiKey });
+  // Update mode cache - if we have an API key and mode is 'ai', cache it
+  const settings = await getSettings();
+  updateModeCache(settings.mode === 'ai' && apiKey ? 'ai' : 'basic');
 }
 
 export async function clearApiKey(): Promise<void> {
@@ -38,4 +48,26 @@ export async function hasApiKey(): Promise<boolean> {
 export function validateApiKey(apiKey: string): boolean {
   // Basic validation: starts with AIzaSy and is ~40 chars
   return apiKey.startsWith('AIzaSy') && apiKey.length >= 35;
+}
+
+// Synchronous mode cache functions for instant UI display
+export function getCachedMode(): 'ai' | 'basic' | null {
+  try {
+    const cached = localStorage.getItem(MODE_CACHE_KEY);
+    if (cached === 'ai' || cached === 'basic') {
+      return cached;
+    }
+    return null;
+  } catch {
+    // localStorage might not be available in service worker
+    return null;
+  }
+}
+
+export function updateModeCache(mode: 'ai' | 'basic'): void {
+  try {
+    localStorage.setItem(MODE_CACHE_KEY, mode);
+  } catch {
+    // localStorage might not be available in service worker
+  }
 }

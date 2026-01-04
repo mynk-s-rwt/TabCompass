@@ -3,7 +3,7 @@ import { Compass, Settings, Sparkles, Zap } from 'lucide-react';
 import { SearchInput } from './SearchInput';
 import { SearchResults } from './SearchResults';
 import { search } from '../../utils/search';
-import { getSettings, getApiKey } from '../../utils/storage/settings';
+import { getSettings, getApiKey, getCachedMode, updateModeCache } from '../../utils/storage/settings';
 import type { SearchResult } from '../../types';
 
 export function App() {
@@ -11,20 +11,23 @@ export function App() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchMode, setSearchMode] = useState<'ai' | 'basic' | 'loading'>('loading');
+  // Use cached mode for instant display, fallback to null if no cache
+  const [searchMode, setSearchMode] = useState<'ai' | 'basic' | null>(() => getCachedMode());
 
-  // Check search mode on mount
+  // Verify and update mode from chrome.storage (source of truth)
   useEffect(() => {
-    async function checkMode() {
+    async function verifyMode() {
       try {
         const settings = await getSettings();
         const apiKey = await getApiKey();
-        setSearchMode(settings.mode === 'ai' && apiKey ? 'ai' : 'basic');
+        const actualMode = settings.mode === 'ai' && apiKey ? 'ai' : 'basic';
+        setSearchMode(actualMode);
+        updateModeCache(actualMode); // Keep cache in sync
       } catch (err) {
         setSearchMode('basic');
       }
     }
-    checkMode();
+    verifyMode();
   }, []);
 
   const handleSearch = useCallback(async (searchQuery: string) => {
@@ -61,8 +64,8 @@ export function App() {
         <div className="flex items-center gap-2">
           <Compass className="w-6 h-6 text-blue-500" />
           <h1 className="font-semibold text-gray-900">TabCompass</h1>
-          {/* Search Mode Indicator */}
-          {searchMode !== 'loading' && (
+          {/* Search Mode Indicator - shows instantly from cache */}
+          {searchMode && (
             <span
               className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                 searchMode === 'ai'
