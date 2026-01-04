@@ -59,26 +59,58 @@ export async function indexTab(tabId: number, url: string): Promise<void> {
       const results = await chrome.scripting.executeScript({
         target: { tabId },
         func: () => {
-          // Inline extraction function - prioritize title and meta descriptions
+          // === WEIGHTED CONTENT EXTRACTION ===
+          // Title is most important for search relevance, so we repeat it 3x
           const title = document.title || '';
           const metaDesc = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
           const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content') || '';
           const ogDesc = document.querySelector('meta[property="og:description"]')?.getAttribute('content') || '';
 
-          // Priority content
-          const priorityContent = [title, ogTitle, metaDesc, ogDesc]
-            .filter(Boolean)
-            .filter((v, i, a) => a.indexOf(v) === i)
-            .join(' | ');
-
-          // Get body content with navigation removed
+          // Clone and clean the DOM
           const clone = document.body.cloneNode(true) as HTMLElement;
-          clone.querySelectorAll('script, style, noscript, iframe, nav, footer, header, aside, .ad, .advertisement, .sidebar, .menu, [role="banner"], [role="navigation"], [role="complementary"], #guide, #masthead, #secondary, #related').forEach(el => el.remove());
+          const selectorsToRemove = [
+            'script', 'style', 'noscript', 'iframe', 'svg',
+            'nav', 'footer', 'header', 'aside',
+            '.ad', '.advertisement', '.sidebar', '.menu', '.navigation', '.nav',
+            '.cookie-banner', '.popup', '.modal', '.tooltip',
+            '[role="banner"]', '[role="navigation"]', '[role="complementary"]',
+            '[aria-hidden="true"]',
+            'ytd-mini-guide-renderer', 'ytd-guide-renderer', 'tp-yt-app-drawer',
+            '#guide', '#masthead', '#secondary', '#related', '#comments',
+            '[aria-label="Guide"]', '[aria-label="Navigation"]',
+            '[data-testid="sidebarColumn"]',
+            '.share-buttons', '.social-share', '.comments-section', '.related-posts',
+          ];
+          clone.querySelectorAll(selectorsToRemove.join(',')).forEach(el => el.remove());
 
-          const mainContent = (clone.querySelector('main, article, [role="main"], #content, .content, #primary') || clone) as HTMLElement;
-          const bodyText = (mainContent.innerText || mainContent.textContent || '').replace(/\s+/g, ' ').trim();
+          // Extract headings
+          const headings: string[] = [];
+          clone.querySelectorAll('h1, h2').forEach(h => {
+            const text = (h.textContent || '').trim();
+            if (text && text.length > 3 && text.length < 200) headings.push(text);
+          });
+          const uniqueHeadings = [...new Set(headings)].slice(0, 5);
 
-          const content = (priorityContent + ' ' + bodyText).slice(0, 5000);
+          // Get main content
+          const mainContent = (clone.querySelector('main, article, [role="main"], #content, .content, #primary, .post-content, .article-content') || clone) as HTMLElement;
+          let bodyText = (mainContent.innerText || mainContent.textContent || '').replace(/\s+/g, ' ').trim();
+
+          // Remove boilerplate
+          const boilerplate = ['Accept all cookies', 'Cookie preferences', 'Privacy policy', 'Terms of service', 'Sign in', 'Sign up', 'Subscribe', 'Skip to content', 'Loading...'];
+          for (const phrase of boilerplate) {
+            bodyText = bodyText.replace(new RegExp(phrase, 'gi'), '');
+          }
+
+          // Build weighted content (title 3x for importance)
+          const parts: string[] = [];
+          if (title) parts.push(title, title, title);
+          if (ogTitle && ogTitle !== title) parts.push(ogTitle);
+          if (uniqueHeadings.length > 0) parts.push(...uniqueHeadings);
+          if (metaDesc) parts.push(metaDesc);
+          if (ogDesc && ogDesc !== metaDesc) parts.push(ogDesc);
+          if (bodyText) parts.push(bodyText);
+
+          const content = parts.join(' | ').slice(0, 5000);
           return { content, metadata: { title } };
         },
       });
