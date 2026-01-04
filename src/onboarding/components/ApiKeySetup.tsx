@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Eye, EyeOff, ExternalLink, CheckCircle } from 'lucide-react';
 import { validateApiKey, saveApiKey } from '../../utils/storage/settings';
 import { testApiKey } from '../../utils/api/gemini';

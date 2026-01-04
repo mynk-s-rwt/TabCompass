@@ -1,7 +1,7 @@
 import { indexTab } from './indexer';
 import { startTracking, stopTracking } from './analytics';
 import { initializeGemini } from '../utils/api/gemini';
-import { getSettings, getApiKey } from '../utils/storage/settings';
+import { getApiKey } from '../utils/storage/settings';
 
 // Initialize on install
 chrome.runtime.onInstalled.addListener(async () => {

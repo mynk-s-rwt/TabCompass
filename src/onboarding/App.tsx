@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Welcome } from './components/Welcome';
 import { ModeSelection } from './components/ModeSelection';
 import { ApiKeySetup } from './components/ApiKeySetup';

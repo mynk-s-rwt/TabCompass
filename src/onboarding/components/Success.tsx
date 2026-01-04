@@ -1,4 +1,3 @@
-import React from 'react';
 import { CheckCircle, Keyboard, BarChart, Compass } from 'lucide-react';
 
 export function Success() {

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Sparkles, Zap } from 'lucide-react';
 
 interface ModeSelectionProps {

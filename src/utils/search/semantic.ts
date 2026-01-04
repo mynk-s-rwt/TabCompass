@@ -1,4 +1,4 @@
-import type { IndexedTab, SearchResult } from '../../types';
+import type { SearchResult } from '../../types';
 import { getAllTabs } from '../storage/db';
 import { generateEmbedding } from '../api/gemini';
 import { cosineSimilarity } from './vector';

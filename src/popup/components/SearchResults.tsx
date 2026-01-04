@@ -1,4 +1,3 @@
-import React from 'react';
 import { ExternalLink, Clock, Globe } from 'lucide-react';
 import type { SearchResult } from '../../types';
 
@@ -50,15 +49,21 @@ interface ResultItemProps {
 function ResultItem({ result }: ResultItemProps) {
   const handleClick = async () => {
     try {
-      // Focus the tab
-      await chrome.tabs.update(result.tabId, { active: true });
-      // Focus the window containing the tab
-      const tab = await chrome.tabs.get(result.tabId);
-      if (tab.windowId) {
-        await chrome.windows.update(tab.windowId, { focused: true });
+      if (result.tabId) {
+        // Focus the tab
+        await chrome.tabs.update(result.tabId, { active: true });
+        // Focus the window containing the tab
+        const tab = await chrome.tabs.get(result.tabId);
+        if (tab.windowId) {
+          await chrome.windows.update(tab.windowId, { focused: true });
+        }
+        // Close the popup
+        window.close();
+      } else {
+        // Tab doesn't exist, open the URL in a new tab
+        await chrome.tabs.create({ url: result.url });
+        window.close();
       }
-      // Close the popup
-      window.close();
     } catch (error) {
       // Tab might not exist anymore, open the URL in a new tab
       await chrome.tabs.create({ url: result.url });
