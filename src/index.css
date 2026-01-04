@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Custom colors - Tailwind v4 uses CSS variables */
+@theme {
+  --color-primary: #1E3A8A;
+  --color-secondary: #06B6D4;
+  --color-accent: #F59E0B;
+}

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx pnpm install:*)",
+      "Bash(npx pnpm approve-builds)",
+      "Bash(npx tsc:*)",
+      "Bash(npx pnpm run build:*)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
