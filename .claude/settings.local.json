@@ -7,7 +7,9 @@
       "Bash(npx pnpm run build:*)",
       "Bash(git rm:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(Enjoy the videos...\" content instead of the\nactual video title.\n\nSolution:\n- Added 1.5 second delay after SPA navigation before extracting content\n- Track pending SPA navigations to prevent tabs.onUpdated from racing\n- SPA navigation handler takes precedence with proper delay\n- tabs.onUpdated skips URLs being handled by SPA navigation\n\nNow YouTube videos will be indexed with their actual titles:\n\"React And Firebase Full Course...\" instead of \"YouTube)",
+      "Bash(Enjoy...\"\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")"
     ]
   }
 }

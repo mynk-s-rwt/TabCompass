@@ -111,6 +111,9 @@ chrome.runtime.onInstalled.addListener(async () => {
   console.log('[Background] Onboarding started - tabs will be indexed after setup');
 });
 
+// Track URLs being handled by SPA navigation (to prevent tabs.onUpdated from racing)
+const spaNavigationPending = new Map<number, string>(); // tabId -> url
+
 // Listen for tab updates (full page loads)
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   console.log('[Background] tabs.onUpdated:', tabId, changeInfo.status, tab.url?.substring(0, 50));
@@ -119,6 +122,12 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     // Skip chrome:// and extension pages
     if (tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
       console.log('[Background] Skipping chrome/extension URL');
+      return;
+    }
+
+    // Skip if this URL is being handled by SPA navigation (which has proper delay)
+    if (spaNavigationPending.get(tabId) === tab.url) {
+      console.log('[Background] Skipping - SPA navigation handling this URL');
       return;
     }
 
@@ -141,6 +150,17 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(async (details) => {
   if (url.startsWith('chrome://') || url.startsWith('chrome-extension://')) {
     return;
   }
+
+  // Mark this URL as being handled by SPA navigation
+  spaNavigationPending.set(details.tabId, url);
+
+  // Wait for page to update its metadata (title, description, etc.)
+  // SPAs like YouTube need time to update after navigation
+  console.log('[Background] Waiting for page metadata to update...');
+  await new Promise(resolve => setTimeout(resolve, 1500));
+
+  // Clear the pending flag
+  spaNavigationPending.delete(details.tabId);
 
   console.log('[Background] Indexing SPA navigation:', url);
   await indexTab(details.tabId, url);
