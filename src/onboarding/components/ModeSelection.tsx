@@ -24,7 +24,6 @@ export function ModeSelection({ onSelectMode }: ModeSelectionProps) {
             hover:bg-[#2C2C2E]/80
             hover:shadow-xl hover:shadow-[#007AFF]/20
             transition-all duration-200
-            focus:outline-none focus:ring-2 focus:ring-[#007AFF] focus:ring-offset-2 focus:ring-offset-[#1C1C1E]
           "
         >
           {/* Recommended Badge */}
@@ -89,7 +88,6 @@ export function ModeSelection({ onSelectMode }: ModeSelectionProps) {
             hover:bg-[#2C2C2E]/80
             hover:border-white/20
             transition-all duration-200
-            focus:outline-none focus:ring-2 focus:ring-white/20 focus:ring-offset-2 focus:ring-offset-[#1C1C1E]
           "
         >
           <div className="flex items-center gap-3 mb-5">

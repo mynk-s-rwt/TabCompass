@@ -77,16 +77,16 @@ body {
   color: var(--text-primary);
 }
 
-/* Focus styles - only for elements that don't have custom focus styles */
-:focus-visible:not(input):not(textarea):not([data-custom-focus]) {
-  outline: 2px solid var(--accent-blue);
-  outline-offset: 2px;
+/* Remove default focus outlines - components have custom focus styles */
+:focus-visible {
+  outline: none;
 }
 
-/* Remove default focus for inputs - they have custom styling */
-input:focus-visible,
-textarea:focus-visible {
-  outline: none;
+/* Only add focus ring to elements that need accessibility indicators */
+a:focus-visible,
+[role="button"]:focus-visible:not(button) {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
 }
 
 /* Custom utility classes */
