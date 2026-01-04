@@ -8,25 +8,33 @@ export async function semanticSearch(
   query: string,
   limit: number = 10
 ): Promise<SearchResult[]> {
+  console.log('[Search] semanticSearch called for:', query);
+
   // Check cache
   const cacheKey = `search_${query}_${limit}`;
   const cached = searchCache.get(cacheKey);
-  if (cached) return cached;
+  if (cached) {
+    console.log('[Search] Returning cached results:', cached.length);
+    return cached;
+  }
 
   // Generate query embedding
   const embeddingResult = await generateEmbedding(query);
   if (!embeddingResult.success || !embeddingResult.data) {
-    console.error('Embedding generation failed:', embeddingResult.error);
+    console.error('[Search] Embedding generation failed:', embeddingResult.error);
     throw new Error(embeddingResult.error || 'Failed to generate query embedding');
   }
 
   const queryEmbedding = embeddingResult.data;
+  console.log('[Search] Query embedding generated, dimensions:', queryEmbedding.length);
 
   // Get all indexed tabs
   const allTabs = await getAllTabs();
+  console.log('[Search] Total tabs in IndexedDB:', allTabs.length);
 
   // Filter tabs with embeddings
-  const tabsWithEmbeddings = allTabs.filter(tab => tab.embedding.length > 0);
+  const tabsWithEmbeddings = allTabs.filter(tab => tab.embedding && tab.embedding.length > 0);
+  console.log('[Search] Tabs with embeddings:', tabsWithEmbeddings.length);
 
   // Calculate similarity for each tab
   const results: SearchResult[] = tabsWithEmbeddings.map(tab => {
@@ -48,6 +56,8 @@ export async function semanticSearch(
   const topResults = results
     .sort((a, b) => b.relevanceScore - a.relevanceScore)
     .slice(0, limit);
+
+  console.log('[Search] Returning top results:', topResults.length);
 
   // Cache results
   searchCache.set(cacheKey, topResults);
