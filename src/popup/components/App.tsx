@@ -1,10 +1,16 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Compass, Settings, Sparkles, Zap } from 'lucide-react';
+import { Compass, Settings, Sparkles, Zap, Loader2 } from 'lucide-react';
 import { SearchInput } from './SearchInput';
 import { SearchResults } from './SearchResults';
 import { search } from '../../utils/search';
 import { getSettings, getApiKey, getCachedMode, updateModeCache } from '../../utils/storage/settings';
 import type { SearchResult } from '../../types';
+
+interface IndexingProgress {
+  current: number;
+  total: number;
+  startedAt: number;
+}
 
 export function App() {
   const [query, setQuery] = useState('');
@@ -13,6 +19,7 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   // Use cached mode for instant display, fallback to null if no cache
   const [searchMode, setSearchMode] = useState<'ai' | 'basic' | null>(() => getCachedMode());
+  const [indexingProgress, setIndexingProgress] = useState<IndexingProgress | null>(null);
 
   // Verify and update mode from chrome.storage (source of truth)
   useEffect(() => {
@@ -28,6 +35,26 @@ export function App() {
       }
     }
     verifyMode();
+  }, []);
+
+  // Listen for indexing progress updates
+  useEffect(() => {
+    // Check initial state
+    chrome.storage.local.get(['tabcompass_indexing_progress'], (result) => {
+      const progress = result.tabcompass_indexing_progress as IndexingProgress | null | undefined;
+      setIndexingProgress(progress || null);
+    });
+
+    // Listen for changes
+    const listener = (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
+      if (areaName === 'local' && changes.tabcompass_indexing_progress) {
+        const progress = changes.tabcompass_indexing_progress.newValue as IndexingProgress | null | undefined;
+        setIndexingProgress(progress || null);
+      }
+    };
+
+    chrome.storage.onChanged.addListener(listener);
+    return () => chrome.storage.onChanged.removeListener(listener);
   }, []);
 
   const handleSearch = useCallback(async (searchQuery: string) => {
@@ -97,6 +124,22 @@ export function App() {
           <Settings className="w-5 h-5 text-gray-500" />
         </button>
       </div>
+
+      {/* Indexing Progress Bar */}
+      {indexingProgress && indexingProgress.total > 0 && (
+        <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
+          <div className="flex items-center gap-2 text-sm text-blue-700">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Indexing tabs: {indexingProgress.current}/{indexingProgress.total}</span>
+          </div>
+          <div className="mt-1.5 h-1.5 bg-blue-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-blue-500 rounded-full transition-all duration-300"
+              style={{ width: `${(indexingProgress.current / indexingProgress.total) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Search Section */}
       <div className="p-4">

@@ -3,6 +3,13 @@ import { startTracking, stopTracking } from './analytics';
 import { initializeGemini } from '../utils/api/gemini';
 import { getApiKey, getSettings } from '../utils/storage/settings';
 
+// Helper to update indexing progress in storage
+async function updateIndexingProgress(current: number, total: number, isComplete: boolean = false): Promise<void> {
+  await chrome.storage.local.set({
+    tabcompass_indexing_progress: isComplete ? null : { current, total, startedAt: Date.now() }
+  });
+}
+
 // Helper to index all existing tabs with delays
 async function indexExistingTabs(): Promise<void> {
   console.log('[Background] Starting to index existing tabs...');
@@ -17,12 +24,22 @@ async function indexExistingTabs(): Promise<void> {
 
   console.log(`[Background] Found ${validTabs.length} tabs to index`);
 
+  if (validTabs.length === 0) {
+    return;
+  }
+
+  // Set initial progress
+  await updateIndexingProgress(0, validTabs.length);
+
   // Index tabs with 500ms delay between each to avoid rate limiting
   for (let i = 0; i < validTabs.length; i++) {
     const tab = validTabs[i];
     if (tab.id && tab.url) {
       console.log(`[Background] Indexing tab ${i + 1}/${validTabs.length}: ${tab.url.substring(0, 50)}`);
       await indexTab(tab.id, tab.url);
+
+      // Update progress
+      await updateIndexingProgress(i + 1, validTabs.length);
 
       // Delay between tabs (except for the last one)
       if (i < validTabs.length - 1) {
@@ -31,6 +48,8 @@ async function indexExistingTabs(): Promise<void> {
     }
   }
 
+  // Clear progress when done
+  await updateIndexingProgress(0, 0, true);
   console.log('[Background] Finished indexing existing tabs');
 }
 
