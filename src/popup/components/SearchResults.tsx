@@ -66,18 +66,27 @@ interface ResultItemProps {
 function ResultItem({ result }: ResultItemProps) {
   const handleClick = async () => {
     try {
-      if (result.tabId) {
-        await chrome.tabs.update(result.tabId, { active: true });
-        const tab = await chrome.tabs.get(result.tabId);
-        if (tab.windowId) {
-          await chrome.windows.update(tab.windowId, { focused: true });
+      // First, try to find an existing tab with this URL
+      // Tab IDs are not persistent across browser sessions, so we query by URL
+      const existingTabs = await chrome.tabs.query({ url: result.url });
+
+      if (existingTabs.length > 0) {
+        // Found existing tab - activate it
+        const tab = existingTabs[0];
+        if (tab.id) {
+          await chrome.tabs.update(tab.id, { active: true });
+          if (tab.windowId) {
+            await chrome.windows.update(tab.windowId, { focused: true });
+          }
         }
         window.close();
       } else {
+        // No existing tab found - create new one
         await chrome.tabs.create({ url: result.url });
         window.close();
       }
     } catch {
+      // Fallback: create new tab
       await chrome.tabs.create({ url: result.url });
       window.close();
     }
