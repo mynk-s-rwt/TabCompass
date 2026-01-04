@@ -36,6 +36,9 @@ export async function semanticSearch(
   const tabsWithEmbeddings = allTabs.filter(tab => tab.embedding && tab.embedding.length > 0);
   console.log('[Search] Tabs with embeddings:', tabsWithEmbeddings.length);
 
+  // Minimum similarity threshold - filter out irrelevant results
+  const MIN_SIMILARITY_THRESHOLD = 0.65;
+
   // Calculate similarity for each tab
   const results: SearchResult[] = tabsWithEmbeddings.map(tab => {
     const similarity = cosineSimilarity(queryEmbedding, tab.embedding);
@@ -52,10 +55,13 @@ export async function semanticSearch(
     };
   });
 
-  // Sort by relevance and take top N
+  // Filter by minimum threshold, sort by relevance, and take top N
   const topResults = results
+    .filter(r => r.similarity >= MIN_SIMILARITY_THRESHOLD)
     .sort((a, b) => b.relevanceScore - a.relevanceScore)
     .slice(0, limit);
+
+  console.log('[Search] Results above threshold:', topResults.length);
 
   console.log('[Search] Returning top results:', topResults.length);
 

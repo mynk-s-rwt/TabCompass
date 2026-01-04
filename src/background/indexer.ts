@@ -3,8 +3,31 @@ import { saveTab, getTab } from '../utils/storage/db';
 import { getSettings, getApiKey } from '../utils/storage/settings';
 import { generateEmbedding } from '../utils/api/gemini';
 
+// Track URLs currently being indexed to prevent duplicates
+const indexingInProgress = new Set<string>();
+
+// Debounce map to prevent rapid re-indexing of the same URL
+const lastIndexedTime = new Map<string, number>();
+const DEBOUNCE_MS = 5000; // Don't re-index same URL within 5 seconds
+
 export async function indexTab(tabId: number, url: string): Promise<void> {
   console.log('[Indexer] indexTab called for:', url);
+
+  // Check if already indexing this URL
+  if (indexingInProgress.has(url)) {
+    console.log('[Indexer] Already indexing this URL, skipping');
+    return;
+  }
+
+  // Check debounce - don't re-index same URL within 5 seconds
+  const lastIndexed = lastIndexedTime.get(url);
+  if (lastIndexed && Date.now() - lastIndexed < DEBOUNCE_MS) {
+    console.log('[Indexer] URL was just indexed, skipping (debounce)');
+    return;
+  }
+
+  // Mark as in progress
+  indexingInProgress.add(url);
 
   try {
     const settings = await getSettings();
@@ -107,8 +130,14 @@ export async function indexTab(tabId: number, url: string): Promise<void> {
     // Save to IndexedDB
     await saveTab(indexedTab);
 
+    // Update last indexed time for debounce
+    lastIndexedTime.set(url, Date.now());
+
     console.log(`[Indexer] Successfully indexed tab: ${url}`);
   } catch (error) {
     console.error('[Indexer] Error indexing tab:', error);
+  } finally {
+    // Always clear the in-progress flag
+    indexingInProgress.delete(url);
   }
 }
