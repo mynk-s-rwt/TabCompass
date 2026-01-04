@@ -1,4 +1,5 @@
 import { indexTab } from './indexer';
+import { startTracking, stopTracking } from './analytics';
 import { initializeGemini } from '../utils/api/gemini';
 import { getSettings, getApiKey } from '../utils/storage/settings';
 
@@ -41,6 +42,39 @@ chrome.runtime.onMessage.addListener((request, sender, _sendResponse) => {
 chrome.commands.onCommand.addListener((command) => {
   if (command === 'open-search') {
     chrome.action.openPopup();
+  }
+});
+
+// Time Tracking: Listen for tab activation
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  startTracking(tabId);
+});
+
+// Time Tracking: Listen for window focus changes
+chrome.windows.onFocusChanged.addListener((windowId) => {
+  if (windowId === chrome.windows.WINDOW_ID_NONE) {
+    // Browser lost focus
+    stopTracking();
+  } else {
+    // Get active tab in focused window
+    chrome.tabs.query({ active: true, windowId }, (tabs) => {
+      if (tabs[0]?.id) {
+        startTracking(tabs[0].id);
+      }
+    });
+  }
+});
+
+// Time Tracking: Listen for idle state
+chrome.idle.onStateChanged.addListener((state) => {
+  if (state === 'idle' || state === 'locked') {
+    stopTracking();
+  } else if (state === 'active') {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]?.id) {
+        startTracking(tabs[0].id);
+      }
+    });
   }
 });
 
