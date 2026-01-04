@@ -30,8 +30,8 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-[#1C1C1E] text-[#F5F5F7]">
+      <div className="container mx-auto px-6">
         {step === 'welcome' && <Welcome onNext={() => setStep('mode')} />}
         {step === 'mode' && <ModeSelection onSelectMode={handleSelectMode} />}
         {step === 'apiKey' && (

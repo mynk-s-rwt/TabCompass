@@ -37,8 +37,8 @@ export async function semanticSearch(
   console.log('[Search] Tabs with embeddings:', tabsWithEmbeddings.length);
 
   // Minimum similarity threshold - filter out irrelevant results
-  // Note: 0.50 is reasonable for semantic search with embeddings
-  const MIN_SIMILARITY_THRESHOLD = 0.50;
+  // Note: Gemini embeddings work well with 0.30-0.40 threshold
+  const MIN_SIMILARITY_THRESHOLD = 0.35;
 
   // Calculate similarity for each tab
   const results: SearchResult[] = tabsWithEmbeddings.map(tab => {
@@ -56,13 +56,20 @@ export async function semanticSearch(
     };
   });
 
+  // Sort by similarity to see top scores
+  const sortedBySimlarity = [...results].sort((a, b) => b.similarity - a.similarity);
+  console.log('[Search] Top 5 similarity scores:', sortedBySimlarity.slice(0, 5).map(r => ({
+    title: r.title?.substring(0, 30),
+    similarity: r.similarity.toFixed(4)
+  })));
+
   // Filter by minimum threshold, sort by relevance, and take top N
   const topResults = results
     .filter(r => r.similarity >= MIN_SIMILARITY_THRESHOLD)
     .sort((a, b) => b.relevanceScore - a.relevanceScore)
     .slice(0, limit);
 
-  console.log('[Search] Results above threshold:', topResults.length);
+  console.log('[Search] Results above threshold (', MIN_SIMILARITY_THRESHOLD, '):', topResults.length);
 
   console.log('[Search] Returning top results:', topResults.length);
 
