@@ -1,7 +1,7 @@
 import type { IndexedTab } from '../types';
 import { saveTab, getTab } from '../utils/storage/db';
-import { embeddingQueue } from '../utils/api/queue';
 import { getSettings, getApiKey } from '../utils/storage/settings';
+import { generateEmbedding } from '../utils/api/gemini';
 
 export async function indexTab(tabId: number, url: string): Promise<void> {
   console.log('[Indexer] indexTab called for:', url);
@@ -62,15 +62,17 @@ export async function indexTab(tabId: number, url: string): Promise<void> {
     // Generate unique ID
     const tabHash = `${url}_${Date.now()}`;
 
-    // Generate embedding (queued) - use getApiKey() instead of settings.apiKey
+    // Generate embedding directly (no queue) - use getApiKey() instead of settings.apiKey
     let embedding: number[] = [];
     if (settings.mode === 'ai' && apiKey) {
       console.log('[Indexer] AI mode enabled, generating embedding...');
       try {
-        const result = await embeddingQueue.add(tabHash, response.content);
-        if (result) {
-          embedding = result;
+        const result = await generateEmbedding(response.content, apiKey);
+        if (result.success && result.data) {
+          embedding = result.data;
           console.log('[Indexer] Embedding generated, dimensions:', embedding.length);
+        } else {
+          console.error('[Indexer] Embedding failed:', result.error);
         }
       } catch (error) {
         console.error('[Indexer] Failed to generate embedding:', error);
