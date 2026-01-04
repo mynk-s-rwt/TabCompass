@@ -111,7 +111,7 @@ chrome.runtime.onInstalled.addListener(async () => {
   console.log('[Background] Onboarding started - tabs will be indexed after setup');
 });
 
-// Listen for tab updates
+// Listen for tab updates (full page loads)
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   console.log('[Background] tabs.onUpdated:', tabId, changeInfo.status, tab.url?.substring(0, 50));
 
@@ -126,6 +126,24 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     // Index the tab
     await indexTab(tabId, tab.url);
   }
+});
+
+// Listen for SPA navigations (History API - pushState/replaceState)
+// This catches navigations within YouTube, Twitter, Gmail, etc.
+chrome.webNavigation.onHistoryStateUpdated.addListener(async (details) => {
+  // Only index main frame, not iframes
+  if (details.frameId !== 0) return;
+
+  const url = details.url;
+  console.log('[Background] SPA navigation detected:', url.substring(0, 50));
+
+  // Skip chrome:// and extension pages
+  if (url.startsWith('chrome://') || url.startsWith('chrome-extension://')) {
+    return;
+  }
+
+  console.log('[Background] Indexing SPA navigation:', url);
+  await indexTab(details.tabId, url);
 });
 
 // Listen for messages from content script
