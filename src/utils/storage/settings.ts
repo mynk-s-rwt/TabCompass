@@ -51,7 +51,13 @@ export function validateApiKey(apiKey: string): boolean {
 }
 
 // Synchronous mode cache functions for instant UI display
+// Note: localStorage is NOT available in service workers
 export function getCachedMode(): 'ai' | 'basic' | null {
+  // Check if we're in a context with localStorage (popup, options page)
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return null;
+  }
+
   try {
     const cached = localStorage.getItem(MODE_CACHE_KEY);
     if (cached === 'ai' || cached === 'basic') {
@@ -59,15 +65,19 @@ export function getCachedMode(): 'ai' | 'basic' | null {
     }
     return null;
   } catch {
-    // localStorage might not be available in service worker
     return null;
   }
 }
 
 export function updateModeCache(mode: 'ai' | 'basic'): void {
+  // Check if we're in a context with localStorage (popup, options page)
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return;
+  }
+
   try {
     localStorage.setItem(MODE_CACHE_KEY, mode);
   } catch {
-    // localStorage might not be available in service worker
+    // Silently fail
   }
 }
